@@ -54,8 +54,8 @@ jobs:
         
     - name: Set Git identity
       run: |
-        git config user.name 'LumaSkly'
-        git config user.email 'orbity@zohomail.com'
+        git config user.name 'github-actions[bot]'
+        git config user.email 'github-actions[bot]@users.noreply.github.com'
         
     - name: Commit and push changes
       run: |
