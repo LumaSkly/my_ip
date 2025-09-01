@@ -12,11 +12,11 @@ urls = ['https://www.wetest.vip/page/cloudflare/address_v4.html',
 ip_pattern = r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}'
 
 # 检查ip.txt文件是否存在,如果存在则删除它
-if os.path.exists('ip.txt'):
-    os.remove('ip.txt')
+if os.path.exists('my_ip.txt'):
+    os.remove('my_ip.txt')
 
 # 创建一个文件来存储IP地址
-with open('ip.txt', 'w') as file:
+with open('my_ip.txt', 'w') as file:
     for url in urls:
         # 发送HTTP请求获取网页内容
         response = requests.get(url)
@@ -41,4 +41,4 @@ with open('ip.txt', 'w') as file:
             for ip in ip_matches:
                 file.write(ip + '\n')
 
-print('IP地址已保存到ip.txt文件中。')
+print('IP地址已保存到my_ip.txt文件中。')
