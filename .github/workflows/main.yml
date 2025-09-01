@@ -2,9 +2,9 @@ name: Update IP List
 
 on:
   schedule:
-    - cron: '*/15 * * * *' # 每15分钟运行一次
-  workflow_dispatch: # 允许手动触发
-  push: # 允许提交触发
+    - cron: '*/15 * * * *'
+  workflow_dispatch:
+  push:
 
 jobs:
   update-ip-list:
@@ -12,7 +12,9 @@ jobs:
     
     steps:
     - uses: actions/checkout@v3
-      
+      with:
+        fetch-depth: 0
+    
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
@@ -21,31 +23,62 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install requests
-        pip install beautifulsoup4
+        pip install requests beautifulsoup4
+        
+    - name: Debug Environment
+      run: |
+        echo "Python version: $(python --version)"
+        echo "Current directory: $(pwd)"
+        echo "Repository: ${{ github.repository }}"
+        echo "Branch: $(git branch --show-current)"
+        echo "PAT exists: ${{ secrets.PAT != '' }}"
         
     - name: Run script
-      run: python ${{ github.workspace }}/collect_ips.py
+      run: |
+        python ${{ github.workspace }}/collect_ips.py
+        if [ $? -ne 0 ]; then
+          echo "Python script failed"
+          exit 1
+        fi
+        
+    - name: Verify IP file
+      run: |
+        if [ -s my_ip.txt ]; then
+          echo "IP file exists and has content:"
+          wc -l my_ip.txt
+          head -n 5 my_ip.txt
+        else
+          echo "IP file is empty or missing"
+          exit 1
+        fi
         
     - name: Set Git identity
       run: |
         git config user.name 'LumaSkly'
         git config user.email 'orbity@zohomail.com'
         
-    - name: Create or update my_ip.txt
+    - name: Commit and push changes
       run: |
-        ROOT_DIR=$(git rev-parse --show-toplevel)
-        if [ ! -f "$ROOT_DIR/my_ip.txt" ]; then
-          echo "my_ip.txt does not exist in the root directory, creating it..."
-          touch "$ROOT_DIR/my_ip.txt"
-          echo "my_ip.txt created successfully in the root directory."
-        fi
-        cd "$ROOT_DIR"
         if [ -n "$(git status --porcelain)" ]; then
           echo "Changes detected, proceeding with git operations..."
           git add my_ip.txt
-          git commit -m "Automatic update"
-          git push "https://x-access-token:${{ secrets.PAT }}@github.com/${{ github.repository }}.git" main
+          git commit -m "Automatic IP list update $(date +%Y-%m-%d)"
+          # 添加重试机制
+          MAX_RETRIES=3
+          RETRY_COUNT=0
+          while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
+            if git push "https://x-access-token:${{ secrets.PAT }}@github.com/${{ github.repository }}.git" main; then
+              echo "Successfully pushed changes"
+              break
+            fi
+            RETRY_COUNT=$((RETRY_COUNT+1))
+            echo "Push failed, attempt $RETRY_COUNT of $MAX_RETRIES"
+            sleep 5
+          done
+          if [ $RETRY_COUNT -eq $MAX_RETRIES ]; then
+            echo "Failed to push after $MAX_RETRIES attempts"
+            exit 1
+          fi
         else
           echo "No changes detected, skipping commit."
         fi
