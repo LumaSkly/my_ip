@@ -30,8 +30,7 @@ jobs:
         
     - name: Commit and push changes
       run: |
-        git config --global user.email "orbity@zohomail.com"
-        git config --global user.name "LumaSkly"
+        git push "https://x-access-token:${{ secrets.PAT }}@github.com/${{ github.repository }}.git"
         ROOT_DIR=$(git rev-parse --show-toplevel)
         if [ ! -f "$ROOT_DIR/my_ip.txt" ]; then
           echo "my_ip.txt does not exist in the root directory, creating it..."
