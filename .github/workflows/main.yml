@@ -44,7 +44,7 @@ jobs:
       run: |
         # 检测文件变化
         if [ -n "$(git status --porcelain -- my_ip.txt)" ]; then
-          git add ip.txt
+          git add my_ip.txt
           git commit -m "Automatic update: $(date -u +'%Y-%m-%dT%H:%M:%SZ')"
           
           # 带重试的推送机制
