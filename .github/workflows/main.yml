@@ -32,11 +32,15 @@ jobs:
       run: |
         git config --global user.email "orbity@zohomail.com"
         git config --global user.name "LumaSkly"
+        ROOT_DIR=$(git rev-parse --show-toplevel)
+        if [ ! -f "$ROOT_DIR/my_ip.txt" ]; then
+          echo "my_ip.txt does not exist in the root directory, creating it..."
+          touch "$ROOT_DIR/my_ip.txt"
+          echo "my_ip.txt created successfully in the root directory."
+        fi
+        cd "$ROOT_DIR"
         if [ -n "$(git status --porcelain)" ]; then
-          if [ ! -f "my_ip.txt" ]; then
-           echo "Error: my_ip.txt does not exist."
-           exit 1
-          fi
+          echo "Changes detected, proceeding with git operations..."
           git add my_ip.txt
           git commit -m "Automatic update"
           git push
