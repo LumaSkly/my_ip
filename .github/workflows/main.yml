@@ -27,6 +27,11 @@ jobs:
     - name: Run script
       run: python ${{ github.workspace }}/collect_ips.py
         
+    - name: Set Git identity
+      run: |
+        git config user.name 'LumaSkly'
+        git config user.email 'orbity@zohomail.com'
+        
     - name: Create or update my_ip.txt
       run: |
         ROOT_DIR=$(git rev-parse --show-toplevel)
