@@ -33,6 +33,10 @@ jobs:
         git config --global user.email "orbity@zohomail.com"
         git config --global user.name "LumaSkly"
         if [ -n "$(git status --porcelain)" ]; then
+          if [ ! -f "my_ip.txt" ]; then
+           echo "Error: my_ip.txt does not exist."
+           exit 1
+          fi
           git add my_ip.txt
           git commit -m "Automatic update"
           git push
