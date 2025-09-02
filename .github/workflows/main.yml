@@ -2,7 +2,7 @@ name: Update IP List
 
 on:
   schedule:
-    - cron: '0 1,13 * * *'  # 每天UTC 1:00和13:00
+    - cron: '0 1,13 * * *'        # UTC 1:00 和 13:00
   workflow_dispatch:
   push:
 
@@ -10,10 +10,10 @@ jobs:
   update-ip-list:
     runs-on: ubuntu-latest
     permissions:
-      contents: write
+      contents: write             # 允许写仓库
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4   # v4 比 v3 快，token 默认用 GITHUB_TOKEN
       with:
         fetch-depth: 0
 
@@ -23,20 +23,19 @@ jobs:
         python-version: '3.9'
 
     - name: Install dependencies
-      run: |
-        pip install requests beautifulsoup4
+      run: pip install requests beautifulsoup4
 
     - name: Run script
-      run: python ${{ github.workspace }}/collect_ips.py
+      run: python collect_ips.py  # 生成/覆盖 my_ip.txt
 
-    - name: 提交更改（仅本地）
+    - name: 提交并推送
       run: |
-        git config --local user.email "github-actions[bot]@users.noreply.github.com"
-        git config --local user.name "github-actions[bot]"
+        git config user.name  "github-actions[bot]"
+        git config user.email "github-actions[bot]@users.noreply.github.com"
         git add my_ip.txt
-        if git diff --cached --quiet; then
-          echo "🔄 未检测到 IP 变化，跳过提交"
-        else
+        if ! git diff --cached --quiet; then
           git commit -m "更新 IP"
-          echo "✅ 本地提交成功"
+          git push
+        else
+          echo "🔄 无变化，跳过提交"
         fi
