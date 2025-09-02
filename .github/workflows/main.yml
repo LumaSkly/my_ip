@@ -3,29 +3,19 @@ name: Update IP List
 on:
   schedule:
     - cron: '0 1,13 * * *'  # 每天UTC 1:00和13:00
-  workflow_dispatch:        # 保留手动触发
+  workflow_dispatch:
   push:
 
 jobs:
   update-ip-list:
     runs-on: ubuntu-latest
     permissions:
-      contents: write  # 写入权限必须保留
+      contents: write
 
     steps:
-    # 关键修改点1：带token检出
     - uses: actions/checkout@v3
       with:
-        token: ${{ secrets.PAT }}  # 注入认证信息
-        fetch-depth: 0  # 获取完整提交历史
-
-    # 关键修改点2：先同步最新代码
-    - name: Pre-sync repository
-      run: |
-        git config --global user.email "orbity@zohomail.com"
-        git config --global user.name "LumaSkly"
-        git remote set-url origin https://x-access-token:${{ secrets.PAT }}@github.com/${{ github.repository }}.git
-        git pull origin main  # 普通拉取最新代码
+        fetch-depth: 0
 
     - name: Set up Python
       uses: actions/setup-python@v4
@@ -39,21 +29,14 @@ jobs:
     - name: Run script
       run: python ${{ github.workspace }}/collect_ips.py
 
-    # 关键修改点3：智能提交逻辑
-    - name: Commit and push changes
+    - name: 提交更改（仅本地）
       run: |
-        # 检测文件变化
-        if [ -n "$(git status --porcelain -- my_ip.txt)" ]; then
-          git add my_ip.txt
-          git commit -m "Automatic update: $(date -u +'%Y-%m-%dT%H:%M:%SZ')"
-          
-          # 带重试的推送机制
-          for i in {1..3}; do
-            git pull --rebase origin main && break || sleep 5
-          done
-          
-          git push origin HEAD:main
-          echo "✅ 更新推送成功"
+        git config --local user.email "github-actions[bot]@users.noreply.github.com"
+        git config --local user.name "github-actions[bot]"
+        git add my_ip.txt
+        if git diff --cached --quiet; then
+          echo "🔄 未检测到 IP 变化，跳过提交"
         else
-          echo "🔄 未检测到IP变化"
+          git commit -m "更新 IP"
+          echo "✅ 本地提交成功"
         fi
